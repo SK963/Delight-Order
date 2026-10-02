@@ -344,16 +344,13 @@ async function start() {
   await mongoose.connect(process.env.MONGO_URI);
   logger.info('Connected to MongoDB');
 
-  // Connect Kafka producer (graceful fallback)
-  try {
-    await producer.connect();
-    logger.info('Kafka producer connected');
-  } catch (kErr) {
-    logger.warn('Kafka producer connection failed (proceeding without broker): ' + kErr.message);
-  }
-
   const PORT = process.env.PORT || 3002;
   app.listen(PORT, () => logger.info(`order-service ready on port ${PORT}`));
+
+  // Connect Kafka producer in background
+  producer.connect()
+    .then(() => logger.info('Kafka producer connected'))
+    .catch(kErr => logger.warn('Kafka producer connection failed (proceeding without broker): ' + kErr.message));
 }
 
 start().catch((err) => {
